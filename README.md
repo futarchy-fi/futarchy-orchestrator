@@ -54,3 +54,27 @@ npm run deployFutarchy
     ```bash
     npm run createFutarchy
     ```
+
+---
+
+## ⛓️ Option 3: Deploy Futarchy Aggregator (Metadata System)
+**Deploys the Metadata factories for Proposal, Organization, and Aggregators.**
+
+1.  **Run Deployment Script:**
+    ```bash
+    npm run deployAggregator
+    ```
+    This script will deploy the factories and attempt to verify them.
+
+2.  **Verification:**
+    If the automatic verification fails, the recommended way to verify on Gnosis Chain is using **Sourcify** (enabled in our config).
+    
+    Get the addresses from the deployment output and run:
+
+    ```bash
+    npx hardhat verify --network gnosis <ProposalMetadataFactoryAddress>
+    npx hardhat verify --network gnosis <OrganizationMetadataFactoryAddress>
+    npx hardhat verify --network gnosis <FutarchyAggregatorFactoryAddress>
+    ```
+
+    *Note: We suggest using Sourcify as GnosisScan API v1 is deprecated.*
