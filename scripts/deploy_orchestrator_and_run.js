@@ -29,7 +29,7 @@ const CONFIG = {
     CATEGORY: FILE_CONFIG.CATEGORY || "crypto, kleros, governance",
     LANGUAGE: "en",
     MIN_BOND: FILE_CONFIG.MIN_BOND || "1000000000000000000",
-    OPENING_TIME: Math.floor(Date.now() / 1000) + 3600
+    OPENING_TIME: FILE_CONFIG.OPENING_TIME || Math.floor(Date.now() / 1000) + 3600
 };
 
 const CONTRACTS = FILE_CONFIG.CONTRACTS || {
