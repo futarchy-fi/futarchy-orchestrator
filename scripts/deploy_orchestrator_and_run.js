@@ -26,7 +26,7 @@ const CONFIG = {
     LIQUIDITY_AMOUNT: FILE_CONFIG.LIQUIDITY_AMOUNT || "0.0001",
 
     // Proposal Params
-    CATEGORY: "crypto, kleros, governance",
+    CATEGORY: FILE_CONFIG.CATEGORY || "crypto, kleros, governance",
     LANGUAGE: "en",
     MIN_BOND: FILE_CONFIG.MIN_BOND || "1000000000000000000",
     OPENING_TIME: Math.floor(Date.now() / 1000) + 3600

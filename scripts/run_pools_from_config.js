@@ -22,10 +22,10 @@ const CONFIG = {
     IMPACT: FILE_CONFIG.IMPACT || 0.001,
     PROBABILITY: FILE_CONFIG.PROBABILITY || 0.5,
     LIQUIDITY_AMOUNT: FILE_CONFIG.LIQUIDITY_AMOUNT || "0.0001",
-    CATEGORY: "crypto, kleros, governance",
+    CATEGORY: FILE_CONFIG.CATEGORY || "crypto, kleros, governance",
     LANGUAGE: "en",
     MIN_BOND: FILE_CONFIG.MIN_BOND || "1000000000000000000",
-    OPENING_TIME: Math.floor(Date.now() / 1000) + 3600
+    OPENING_TIME: FILE_CONFIG.OPENING_TIME || Math.floor(Date.now() / 1000) + 3600
 };
 
 async function main() {

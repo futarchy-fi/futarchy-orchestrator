@@ -1,7 +1,9 @@
 {
-    "MARKET_NAME_PREFIX": "TEST_REFACTOR_RUN_ONLY",
-    "MARKET_NAME_SUFFIX": "GIP-140 Revamp Snapshot voting strategies be apporved",
+    "MARKET_NAME_PREFIX": "GIP-144",
+    "MARKET_NAME_SUFFIX": "Will GIP-144 be approved",
     "SPOT_PRICE": 103,
+    "OPENING_TIME": 1765312500,
+    "CATEGORY": "gnosis, governance",
     "IMPACT": 0.001,
     "PROBABILITY": 0.5,
     "LIQUIDITY_AMOUNT": "0.0001",
