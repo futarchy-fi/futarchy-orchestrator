@@ -24,8 +24,18 @@ Use the `estimateArbitrage` function. This is a **View** function (Read-Only).
 Use the `simulateArbitrage` function. This is a **State-Changing** function that MUST be called via `staticCall` (Simulation).
 
 *   **Pros**: 100% Precise. It simulates the actual swap on-chain and catches the result. Handles all tick crossings and fees perfectly.
-*   **Cons**: Must be simulated. If executed as a transaction, it will Revert (by design). Shows up in "Write Contract" tab.
 *   **Usage**: Mandatory for executing the actual arbitrage transaction to ensure exact precision.
+
+### ⚠️ Important: Simulation vs Execution
+
+The `simulateArbitrage` function is "Write" because it *can* change state. However, for arbitrage calculation, we use **`staticCall`**:
+
+*   **What is `staticCall`?**: It asks the Ethereum node to *pretend* to run the transaction and return the result, **without** broadcasting it to the network or spending gas.
+*   **Why use it?**: It allows us to use complex on-chain logic (swaps, oracle checks) to get a precise answer without paying for a transaction.
+*   **Limitations**:
+    1.  **Spot Price Latency**: The result is valid for the *current* block. If a trade happens in the pool right after you simulate, the required amount might change slightly.
+    2.  **RPC Limits**: Some RPC providers cap the gas limit for simulations. (Not usually an issue for this contract).
+    3.  **Explorer UI**: On Etherscan/GnosisScan, you **CANNOT** easily `staticCall` a write function from the UI. You must use a script (like `ethers.js` or `foundry`). Clicking "Write" on the explorer will prompt a real transaction (which will revert).
 
 ---
 
