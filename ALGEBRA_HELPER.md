@@ -4,76 +4,90 @@ This project includes a specialized helper contract to calculate precise precisi
 
 ## 🚀 Deployed Contract
 **Network:** Gnosis Chain  
-**Address:** `0xBF191FDd58E542230718701308d1B029b9E2231F`  
-**Verified:** [Sourcify](https://repo.sourcify.dev/contracts/full_match/100/0xBF191FDd58E542230718701308d1B029b9E2231F/)
+**Address:** `0x6743529b98B4D146Bf65e6BE8432FF2Ad693bf45`  
+**Verified:** [GnosisScan/Sourcify](https://gnosisscan.io/address/0x6743529b98B4D146Bf65e6BE8432FF2Ad693bf45)
 
 ---
 
 ## 📖 How to Use
 
-The contract provides TWO ways to calculate arbitrage depending on your needs:
+The contract provides useful functions for Arbitrage and Swap Simulation:
 
-### 1. READ Mode (Safe, Fast, Approximate)
-Use the `estimateArbitrage` function. This is a **View** function (Read-Only).
-
+### 1. `estimateArbitrage` (Read Mode)
+A **View** function (Read-Only) for approximate arbitrage calculation.
 *   **Pros**: Instant, No Gas/Simulation required, Safe to call on Etherscan "Read Contract".
-*   **Cons**: Uses active liquidity math. If the price move is large and crosses tick boundaries, the result might be slightly off (approximate).
-*   **Usage**: Great for UI display or quick checks.
+*   **Cons**: Approximate (uses constant product math on active tick).
+*   **Usage**: UI estimation.
 
-### 2. WRITE/SIMULATE Mode (Precise)
-Use the `simulateArbitrage` function. This is a **State-Changing** function that MUST be called via `staticCall` (Simulation).
+### 2. `simulateArbitrage` (Precise Mode)
+A **State-Changing** simulation function. MUST be called via `staticCall`.
+*   **Pros**: 100% Precise. Simulates actual swaps and tick crossings.
+*   **Usage**: Executing arbitrage transactions.
+*   **Input**: Proposal Address, Spot Price (1e18), Probability (1e18), Impact (1e18).
 
-*   **Pros**: 100% Precise. It simulates the actual swap on-chain and catches the result. Handles all tick crossings and fees perfectly.
-*   **Usage**: Mandatory for executing the actual arbitrage transaction to ensure exact precision.
+### 3. `simulateQuote` (New! 🔮)
+A comprehensive swap simulator for generic quotes.
+*   **Pros**: precise simulation of executing a swap on a proposal pool.
+*   **Input**: 
+    1.  `proposal` (address)
+    2.  `isYesPool` (bool): True for YES/Collateral, False for NO/Collateral.
+    3.  `inputType` (uint8): `0` for Company Token (Asset), `1` for Currency (Collateral).
+    4.  `amountIn` (uint256): Amount of tokens to swap.
+*   **Returns**: `SwapSimulationResult` struct.
+    *   `amount0Delta`: Token0 change (Neg = User Send, Pos = User Receive).
+    *   `amount1Delta`: Token1 change.
+    *   `startSqrtPrice`: Price before swap.
+    *   `endSqrtPrice`: Price after swap (currently approximate or 0 depending on implementation details of revert-trick).
 
-### ⚠️ Important: Simulation vs Execution
 
-The `simulateArbitrage` function is "Write" because it *can* change state. However, for arbitrage calculation, we use **`staticCall`**:
+### 4. Function Comparison: Which one should I use?
 
-*   **What is `staticCall`?**: It asks the Ethereum node to *pretend* to run the transaction and return the result, **without** broadcasting it to the network or spending gas.
-*   **Why use it?**: It allows us to use complex on-chain logic (swaps, oracle checks) to get a precise answer without paying for a transaction.
-*   **Limitations**:
-    1.  **Spot Price Latency**: The result is valid for the *current* block. If a trade happens in the pool right after you simulate, the required amount might change slightly.
-    2.  **RPC Limits**: Some RPC providers cap the gas limit for simulations. (Not usually an issue for this contract).
-    3.  **Explorer UI**: On Etherscan/GnosisScan, you **CANNOT** easily `staticCall` a write function from the UI. You must use a script (like `ethers.js` or `foundry`). Clicking "Write" on the explorer will prompt a real transaction (which will revert).
-
----
-
-## 🛠 Parameters
-Both functions accept the same inputs:
-
-1.  `proposal` (address): The Futarchy Proposal address (e.g. `0x...`).
-2.  `spotPrice18` (uint256): The target Spot Price scaled by 1e18 (e.g. `100 ether` for 100.0).
-3.  `probability18` (uint256): Event Probability scaled by 1e18 (e.g. `0.5 ether` for 50%).
-4.  `impact18` (int256): Market Impact scaled by 1e18 (e.g. `-0.01 ether` for -1%). **Can be Negative**.
-
-## 🧮 Logic & Math
-The helper automatically:
-1.  Identifies YES and NO pools from the Proposal.
-2.  Determines if tokens are Inverted (Asset/Currency vs Currency/Asset).
-3.  Calculates Target Prices:
-    *   **YES**: `Spot * (1 + Impact * (1 - Prob))`
-    *   **NO**: `Spot * (1 - Impact * Prob)`
-4.  **Edge Cases**:
-    *   If `Prob == 0`: Skips YES pool (Price valid only if event possible).
-    *   If `Prob == 1`: Skips NO pool.
-
-## 📦 Return Data
-The functions return a `ArbitrageResult` struct containing:
-*   `pool` (address)
-*   `amount0Delta` (int256): Amount of Token0 the POOL receives.
-    *   `> 0`: User **SELLS** Token0 to Pool.
-    *   `< 0`: User **BUYS** Token0 from Pool.
-*   `amount1Delta` (int256): Amount of Token1 the POOL receives.
-*   `targetPriceHuman`: The calculated target price (for verification).
+| Function | Input | Goal | Use Case |
+| :--- | :--- | :--- | :--- |
+| **`simulateQuote`** | Proposal Addr, Amount | "I want to know the price." | **UI / Users**. Calculating swap quotes for a specific proposal. Simplest to use. |
+| **`simulateExactInput`** | Pool Addr, Amount | "I want to debug this pool." | **Devs / Debugging**. Calculating swap quotes for a specific *pool address* directly. |
+| **`simulateSwap`** | Pool Addr, **Target Price** | "I want to move the price." | **Arbitrageurs**. Calculating how many tokens to swap to reach a specific target price (for Algo Arb). |
+| **`simulateArbitrage`** | Proposal Addr, Params | "I want to arb this proposal." | **Arbitrageurs**. Full wrapper that calculates both YES/NO pools to reach a target price based on probability/impact. |
 
 ---
 
-## 💻 Example Script
-See `scripts/check_user_proposal_new.js` for a working example using `ethers.js`.
+## 🛠 Example Usage (JavaScript)
+
+### Getting a Precise Quote
+Use `staticCall` to prevent gas spending.
 
 ```javascript
-const helper = await ethers.getContractAt("FutarchyArbitrageHelper", "0xBF191FDd58E542230718701308d1B029b9E2231F");
-// Use staticCall for Simulation Mode!
-const result = await helper.simulateArbitrage.staticCall(proposal, spot, prob, impact);
+const helperAbi = [
+  "function simulateQuote(address proposal, bool isYesPool, uint8 inputType, uint256 amountIn) external returns (tuple(int256 amount0Delta, int256 amount1Delta, uint160 startSqrtPrice, uint160 endSqrtPrice, bytes debugReason))"
+];
+const helper = new ethers.Contract("0x6743529b98B4D146Bf65e6BE8432FF2Ad693bf45", helperAbi, provider);
+
+// Simulate selling 100 Outcome Tokens for Collateral in YES Pool
+// inputType 0 = Outcome Token
+const res = await helper.simulateQuote.staticCall(
+    "0xProposal...", 
+    true, // isYesPool
+    0,    // inputType 0
+    ethers.parseEther("100")
+);
+
+// amount0Delta/amount1Delta contain precise movement.
+// One will be positive (user sold/pool received), one negative (user bought/pool paid).
 ```
+
+## ⚠️ Notes
+*   **`staticCall` is mandatory** for `simulateArbitrage` and `simulateQuote`. Direct transactions will revert to avoid spending user funds accidentally.
+*   If `debugReason` is returned in the struct, it contains the raw bytes of the revert reason if parsing failed.
+
+### 5. FAQ
+
+**Q: Do I need tokens or approval to simulate?**
+**A: NO.**
+All functions in this helper (`simulateQuote`, `simulateExactInput`, `simulateSwap`, `simulateArbitrage`) use the **Revert Trick**. They never check your balance.
+
+**Q: When DO I need balance?**
+**A:** Only when you want to **Execute** the real trade on the **Router** (e.g. `swaprRouter.exactInputSingle`). That is a real transaction and requires tokens and approval. The Helper is strictly for *calculation*.
+
+**Q: Why does the Router fail even with `staticCall`?**
+**A:** The Router tries to pull tokens from your wallet (`transferFrom`) *before* calling the pool. If you have 0 balance, this transfer fails immediately.
+**My Helper** talks directly to the Pool and reverts *inside* the swap process (in the callback), effectively "interrupting" the swap before the Pool asks for payment. That's why the Helper works with 0 balance!

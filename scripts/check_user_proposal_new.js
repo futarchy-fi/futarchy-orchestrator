@@ -1,25 +1,33 @@
 const hre = require("hardhat");
 const { ethers } = hre;
 
-async function main() {
-    console.log("🧪 Checking Arbitrage for Proposal (Latest Helper - Simulate)...");
+const fs = require("fs");
 
-    const HELPER_ADDRESS = "0xBF191FDd58E542230718701308d1B029b9E2231F"; // Verified Dual-Mode Helper
-    const PROPOSAL_ADDRESS = "0x9590dAF4d5cd4009c3F9767C5E7668175cFd37CF";
+async function main() {
+    let output = "";
+    function log(msg) {
+        console.log(msg);
+        output += msg + "\n";
+    }
+
+    log("🧪 Checking Arbitrage for Proposal (Latest Helper - Simulate)...");
+
+    const HELPER_ADDRESS = "0x6743529b98B4D146Bf65e6BE8432FF2Ad693bf45"; // Verified Dual-Mode Helper
+    const PROPOSAL_ADDRESS = "0x3D076d5d12341226527241f8a489D4A8863B73e5";
 
     // Params
-    // Spot: 107
-    // Prob: 11.94% (0.1194)
-    // Impact: 33.2% (0.332)
+    // Spot: 107.01
+    // Prob: 50.01% (0.5001)
+    // Impact: 3% (0.03)
 
-    const spot = ethers.parseEther("107");
-    const prob = ethers.parseEther("0.1194");
-    const impact = ethers.parseEther("0.332");
+    const spot = ethers.parseEther("107.01");
+    const prob = ethers.parseEther("0.5001");
+    const impact = ethers.parseEther("0.03");
 
     console.log(`   Proposal: ${PROPOSAL_ADDRESS}`);
-    console.log(`   Spot:     107`);
-    console.log(`   Prob:     11.94%`);
-    console.log(`   Impact:   33.2%`);
+    console.log(`   Spot:     107.01`);
+    console.log(`   Prob:     50.01%`);
+    console.log(`   Impact:   3%`);
 
     // ABI updated for 'simulateArbitrage'
     const helperAbi = [

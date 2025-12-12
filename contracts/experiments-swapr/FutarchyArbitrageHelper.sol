@@ -45,6 +45,16 @@ contract FutarchyArbitrageHelper {
         PoolInfo noPool;
     }
 
+    struct SwapSimulationResult {
+        int256 amount0Delta;
+        int256 amount1Delta;
+        uint160 startSqrtPrice;
+        uint160 endSqrtPrice;
+        bytes debugReason;
+    }
+
+
+
     // Custom error for simulation
     error ReturnedDeltas(int256 amount0, int256 amount1);
 
@@ -279,20 +289,83 @@ contract FutarchyArbitrageHelper {
         ) {
             revert("Swap failed to revert");
         } catch (bytes memory reason) {
-            // Check if it's the callback error
-             if (bytes4(reason) == FutarchyArbitrageHelper.ReturnedDeltas.selector) {
-                  // Propagate
-                  assembly {
-                      revert(add(reason, 32), mload(reason))
-                  }
-             } else {
-                 // Try to parse the callback error if it came from algebraSwapCallback
-                 // Actually the pool calls callback, callback reverts.
-                 // The pool catches and bubbles up? 
-                 // Algebra pool usually bubbles up reverts.
-                 // So we catch it here.
-                 revert(string(reason));
+            _handleSwapRevert(reason);
+        }
+    }
+
+    function simulateQuote(
+        address proposal, 
+        bool isYesPool, 
+        uint8 inputType, 
+        uint256 amountIn
+    ) external returns (SwapSimulationResult memory) {
+        address tokenA;
+        address tokenB;
+        
+        if (isYesPool) {
+             (tokenA, ) = IFutarchyProposal(proposal).wrappedOutcome(0); 
+             (tokenB, ) = IFutarchyProposal(proposal).wrappedOutcome(2); 
+        } else {
+             (tokenA, ) = IFutarchyProposal(proposal).wrappedOutcome(1); 
+             (tokenB, ) = IFutarchyProposal(proposal).wrappedOutcome(3); 
+        }
+        
+        address pool = IAlgebraFactory(algebraFactory).poolByPair(tokenA, tokenB);
+        require(pool != address(0), "Pool not found");
+        
+        address token0 = IAlgebraPool(pool).token0();
+        bool zeroForOne;
+        
+        address inputToken = (inputType == 0) ? tokenA : tokenB;
+        
+        if (inputToken == token0) {
+            zeroForOne = true;
+        } else {
+            zeroForOne = false;
+        }
+
+        (uint160 currentSqrtP,,,,,,) = IAlgebraPool(pool).globalState();
+        uint160 limitSqrtPrice = zeroForOne ? TickMath.MIN_SQRT_RATIO + 1 : TickMath.MAX_SQRT_RATIO - 1;
+
+        try IAlgebraPool(pool).swap(
+            address(this),
+            zeroForOne,
+            int256(amountIn),
+            limitSqrtPrice,
+            abi.encode(msg.sender)
+        ) {
+             revert("Swap failed to revert");
+        } catch (bytes memory reason) {
+             (int256 a0, int256 a1) = parseRevertReason(reason);
+             return SwapSimulationResult(a0, a1, currentSqrtP, 0, reason); 
+        }
+    }
+
+    function simulateExactInput(address pool, bool zeroForOne, int256 amountIn) external returns (SwapSimulationResult memory) {
+        (uint160 currentSqrtP,,,,,,) = IAlgebraPool(pool).globalState();
+        uint160 limitSqrtPrice = zeroForOne ? TickMath.MIN_SQRT_RATIO + 1 : TickMath.MAX_SQRT_RATIO - 1;
+
+        try IAlgebraPool(pool).swap(
+            address(this),
+            zeroForOne,
+            amountIn,
+            limitSqrtPrice,
+            abi.encode(msg.sender)
+        ) {
+             revert("Swap failed to revert");
+        } catch (bytes memory reason) {
+             (int256 a0, int256 a1) = parseRevertReason(reason);
+             return SwapSimulationResult(a0, a1, currentSqrtP, 0, reason); 
+        }
+    }
+
+    function _handleSwapRevert(bytes memory reason) internal pure returns (int256, int256) {
+        if (bytes4(reason) == FutarchyArbitrageHelper.ReturnedDeltas.selector) {
+             assembly {
+                 revert(add(reason, 32), mload(reason))
              }
+        } else {
+             revert(string(reason));
         }
     }
 
