@@ -4,8 +4,8 @@ This project includes a specialized helper contract to calculate precise precisi
 
 ## 🚀 Deployed Contract
 **Network:** Gnosis Chain  
-**Address:** `0x6743529b98B4D146Bf65e6BE8432FF2Ad693bf45`  
-**Verified:** [GnosisScan/Sourcify](https://gnosisscan.io/address/0x6743529b98B4D146Bf65e6BE8432FF2Ad693bf45)
+**Address:** `0xB261e5BEC88b8d235F27956aa497e57aa02142Ab`  
+**Verified:** [GnosisScan/Sourcify](https://gnosisscan.io/address/0xB261e5BEC88b8d235F27956aa497e57aa02142Ab)
 
 ---
 
@@ -60,7 +60,7 @@ Use `staticCall` to prevent gas spending.
 const helperAbi = [
   "function simulateQuote(address proposal, bool isYesPool, uint8 inputType, uint256 amountIn) external returns (tuple(int256 amount0Delta, int256 amount1Delta, uint160 startSqrtPrice, uint160 endSqrtPrice, bytes debugReason))"
 ];
-const helper = new ethers.Contract("0x6743529b98B4D146Bf65e6BE8432FF2Ad693bf45", helperAbi, provider);
+const helper = new ethers.Contract("0xB261e5BEC88b8d235F27956aa497e57aa02142Ab", helperAbi, provider);
 
 // Simulate selling 100 Outcome Tokens for Collateral in YES Pool
 // inputType 0 = Outcome Token
@@ -90,4 +90,55 @@ All functions in this helper (`simulateQuote`, `simulateExactInput`, `simulateSw
 
 **Q: Why does the Router fail even with `staticCall`?**
 **A:** The Router tries to pull tokens from your wallet (`transferFrom`) *before* calling the pool. If you have 0 balance, this transfer fails immediately.
-**My Helper** talks directly to the Pool and reverts *inside* the swap process (in the callback), effectively "interrupting" the swap before the Pool asks for payment. That's why the Helper works with 0 balance!
+**my Helper** talks directly to the Pool and reverts *inside* the swap process (in the callback), effectively "interrupting" the swap before the Pool asks for payment. That's why the Helper works with 0 balance!
+
+---
+
+## 📚 JS Utility Library (`FutarchyQuoteHelper.js`)
+
+We have created a ready-to-use JavaScript library to make getting quotes easy.
+
+### **Features**
+*   Returns `expectedReceive`, `minReceive` (based on slippage), `executionPrice`, and `priceAfter` (New!).
+*   Handles token decimals and BigInt math for you.
+*   Safe to use in Frontend or Scripts.
+
+### **Installation**
+Copy `scripts/FutarchyQuoteHelper.js` into your project.
+
+### **Usage**
+
+```javascript
+const { getSwapQuote } = require("./scripts/FutarchyQuoteHelper");
+const { ethers } = require("ethers");
+
+async function example() {
+    const provider = new ethers.JsonRpcProvider("https://rpc.gnosischain.com"); // or window.ethereum
+
+    const quote = await getSwapQuote({
+        proposal: "0xProposalAddress...",
+        amount: "0.1",                // Amount to swap
+        isYesPool: true,              // YES vs NO pool
+        isInputCompanyToken: true,    // True = Selling Asset, False = Selling Collateral
+        slippagePercentage: 0.03      // 3% Slippage
+    }, provider);
+
+    console.log("Expected Receive:", quote.expectedReceive);
+    console.log("Min Receive:",      quote.minReceive);
+    console.log("Exec Price:",       quote.executionPrice);
+}
+```
+
+### **Output JSON Format**
+```json
+{
+  "expectedReceive": "0.123456...",
+  "minReceive": "0.119752...",
+  "slippagePct": 0.03,
+  "currentPoolPrice": "1.25",
+  "priceAfter": "1.21", 
+  "executionPrice": "1.23",
+  "startSqrtPrice": "792281...",
+  "raw": { ...BigInts... }
+}
+```

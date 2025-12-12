@@ -56,7 +56,8 @@ contract FutarchyArbitrageHelper {
 
 
     // Custom error for simulation
-    error ReturnedDeltas(int256 amount0, int256 amount1);
+    // Now includes endSqrtPrice
+    error ReturnedDeltas(int256 amount0, int256 amount1, uint160 endSqrtPrice);
 
     address public immutable algebraFactory;
 
@@ -162,7 +163,7 @@ contract FutarchyArbitrageHelper {
         try this.simulateSwap(info.pool, info.targetSqrtPrice) {
             // Should not happen
         } catch (bytes memory reason) {
-             (info.amount0Delta, info.amount1Delta) = parseRevertReason(reason);
+             (info.amount0Delta, info.amount1Delta, ) = parseRevertReason(reason);
         }
         
         // Get Current SqrtPrice for reference
@@ -276,7 +277,7 @@ contract FutarchyArbitrageHelper {
     // Public simulation function to be called by _processPool via internal transaction or 'this'
     function simulateSwap(address pool, uint160 targetSqrtP) external {
         (uint160 currentSqrtP,,,,,,) = IAlgebraPool(pool).globalState();
-        if (targetSqrtP == currentSqrtP) revert ReturnedDeltas(0,0);
+        if (targetSqrtP == currentSqrtP) revert ReturnedDeltas(0,0, currentSqrtP);
         
         bool zeroForOne = targetSqrtP < currentSqrtP;
         
@@ -336,8 +337,8 @@ contract FutarchyArbitrageHelper {
         ) {
              revert("Swap failed to revert");
         } catch (bytes memory reason) {
-             (int256 a0, int256 a1) = parseRevertReason(reason);
-             return SwapSimulationResult(a0, a1, currentSqrtP, 0, reason); 
+             (int256 a0, int256 a1, uint160 endP) = parseRevertReason(reason);
+             return SwapSimulationResult(a0, a1, currentSqrtP, endP, reason); 
         }
     }
 
@@ -354,8 +355,8 @@ contract FutarchyArbitrageHelper {
         ) {
              revert("Swap failed to revert");
         } catch (bytes memory reason) {
-             (int256 a0, int256 a1) = parseRevertReason(reason);
-             return SwapSimulationResult(a0, a1, currentSqrtP, 0, reason); 
+             (int256 a0, int256 a1, uint160 endP) = parseRevertReason(reason);
+             return SwapSimulationResult(a0, a1, currentSqrtP, endP, reason); 
         }
     }
 
@@ -370,23 +371,20 @@ contract FutarchyArbitrageHelper {
     }
 
     function algebraSwapCallback(int256 a0, int256 a1, bytes calldata) external {
-        revert ReturnedDeltas(a0, a1);
+        // Fetch the NEW global state. 
+        // In Algebra, callback happens after state update but before check.
+        (uint160 sqrtPrice,,,,,,) = IAlgebraPool(msg.sender).globalState();
+        revert ReturnedDeltas(a0, a1, sqrtPrice);
     }
     
-    function parseRevertReason(bytes memory reason) internal pure returns (int256, int256) {
-        // We expect ReturnedDeltas(int256, int256)
-        // Check selector
-        // Error selector is 4 bytes.
-        if (reason.length < 4) return (0,0);
+    function parseRevertReason(bytes memory reason) internal pure returns (int256, int256, uint160) {
+        // We expect ReturnedDeltas(int256, int256, uint160)
+        if (reason.length < 4) return (0,0,0);
         
-        // Decode
-        // Try decoding assuming it is ReturnedDeltas
-        // If reason usually comes encoded as error data.
-        // We skip 4 bytes.
-        if (reason.length >= 68) {
-             return abi.decode(slice(reason, 4, reason.length), (int256, int256));
+        if (reason.length >= 100) { // 4 + 32*3 = 100
+             return abi.decode(slice(reason, 4, reason.length), (int256, int256, uint160));
         }
-        return (0,0);
+        return (0,0,0);
     }
 
     function slice(bytes memory data, uint start, uint end) internal pure returns (bytes memory) {
