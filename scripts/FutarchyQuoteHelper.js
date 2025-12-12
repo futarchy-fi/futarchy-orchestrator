@@ -6,9 +6,9 @@ const { ethers } = require("ethers");
  */
 
 // 🚀 CONFIGURATION
-const HELPER_ADDRESS = "0xB261e5BEC88b8d235F27956aa497e57aa02142Ab"; // Verified Gnosis Contract (With endSqrtPrice)
+const HELPER_ADDRESS = "0xe32bfb3DD8bA4c7F82dADc4982c04Afa90027EFb"; // Verified Gnosis Contract (With endSqrtPrice & Inversion)
 const HELPER_ABI = [
-    "function simulateQuote(address proposal, bool isYesPool, uint8 inputType, uint256 amountIn) external returns (tuple(int256 amount0Delta, int256 amount1Delta, uint160 startSqrtPrice, uint160 endSqrtPrice, bytes debugReason))"
+    "function simulateQuote(address proposal, bool isYesPool, uint8 inputType, uint256 amountIn) external returns (tuple(int256 amount0Delta, int256 amount1Delta, uint160 startSqrtPrice, uint160 endSqrtPrice, bytes debugReason, bool isToken0Outcome))"
 ];
 
 /**
@@ -103,17 +103,37 @@ async function getSwapQuote({ proposal, amount, isYesPool, isInputCompanyToken, 
     const amountInNum = Number(amount);
     const amountOutNum = Number(expectedReceive);
 
-    const executionPrice = amountInNum > 0 ? (amountOutNum / amountInNum) : 0;
+    // Execution Price should always be "Currency per Asset" (Collateral / Outcome)
+    // If Selling Asset (Input=Asset, Output=Currency): Price = Out/In
+    // If Buying Asset (Input=Currency, Output=Asset):  Price = In/Out
+    let executionPriceVal = 0;
+    if (amountInNum > 0 && amountOutNum > 0) {
+        if (isInputCompanyToken) {
+            executionPriceVal = amountOutNum / amountInNum;
+        } else {
+            executionPriceVal = amountInNum / amountOutNum;
+        }
+    }
 
     // Current Pool Price (from sqrtPrice)
     const startSqrtPrice = result.startSqrtPrice;
-    const currentPoolPrice = calculatePriceFromSqrt(startSqrtPrice);
+    let currentPoolPrice = calculatePriceFromSqrt(startSqrtPrice);
 
     // Price After
     const endSqrtPrice = result.endSqrtPrice;
-    let priceAfter = "0";
+    let priceAfterNum = 0;
     if (endSqrtPrice > 0n) {
-        priceAfter = calculatePriceFromSqrt(endSqrtPrice).toFixed(6);
+        priceAfterNum = calculatePriceFromSqrt(endSqrtPrice);
+    }
+
+    // Inversion Logic
+    // isToken0Outcome: T0=Outcome, T1=Currency -> Price = T1/T0 = Curr/Out (Correct)
+    // !isToken0Outcome: T0=Currency, T1=Outcome -> Price = T1/T0 = Out/Curr (Inverted)
+    let isInverted = false;
+    if (!result.isToken0Outcome) {
+        currentPoolPrice = (currentPoolPrice > 0) ? 1 / currentPoolPrice : 0;
+        priceAfterNum = (priceAfterNum > 0) ? 1 / priceAfterNum : 0;
+        isInverted = true;
     }
 
     return {
@@ -121,10 +141,11 @@ async function getSwapQuote({ proposal, amount, isYesPool, isInputCompanyToken, 
         minReceive: minReceive,
         slippagePct: slippagePercentage,
         currentPoolPrice: currentPoolPrice.toFixed(6),
-        priceAfter: priceAfter,
-        executionPrice: executionPrice.toFixed(6),
+        priceAfter: priceAfterNum.toFixed(6),
+        executionPrice: executionPriceVal.toFixed(6),
         startSqrtPrice: startSqrtPrice.toString(),
         endSqrtPrice: endSqrtPrice.toString(),
+        isInverted: isInverted,
         // Raw big ints if needed
         raw: {
             amountIn: amountBig,

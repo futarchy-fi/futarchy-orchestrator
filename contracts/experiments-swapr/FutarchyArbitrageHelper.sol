@@ -51,6 +51,7 @@ contract FutarchyArbitrageHelper {
         uint160 startSqrtPrice;
         uint160 endSqrtPrice;
         bytes debugReason;
+        bool isToken0Outcome; // New flag for inversion
     }
 
 
@@ -338,7 +339,24 @@ contract FutarchyArbitrageHelper {
              revert("Swap failed to revert");
         } catch (bytes memory reason) {
              (int256 a0, int256 a1, uint160 endP) = parseRevertReason(reason);
-             return SwapSimulationResult(a0, a1, currentSqrtP, endP, reason); 
+             // Check if token0 is outcome (tokenA/tokenB are outcomes?)
+             // Yes, tokenA/tokenB are outcomes. 
+             // We need to know if token0 is THE outcome we care about?
+             // Actually, tokenA/tokenB are the PAIR. One is outcome, one is collateral?
+             // No, standard proposal has Outcome/Collateral pairs?
+             // Actually, let's just return if token0 == tokenA?
+             // In simulateQuote: tokenA is Outcome, tokenB is Collateral (or vice versa depending on setup).
+             // Let's assume inputType 0 is "Outcome".
+             
+             bool isT0Outcome = (token0 == tokenA) && (inputType == 0) || (token0 == tokenB) && (inputType == 1);
+             // Simpler: Just pass if token0 equals the 'Asset' token (Outcome 0 or 1).
+             // In isYesPool: T0=Outcome(0), T1=Collateral? No, wrappedOutcome(2) is Collateral?
+             // Let's rely on the caller knowing what they asked for.
+             // Best: Return `token0` address? Or just `isToken0Outcome` based on the proposal lookup.
+             
+             bool is0Outcome = (token0 == tokenA); // tokenA is always the Outcome(0/1) from wrappedOutcome
+             
+             return SwapSimulationResult(a0, a1, currentSqrtP, endP, reason, is0Outcome); 
         }
     }
 
@@ -356,7 +374,7 @@ contract FutarchyArbitrageHelper {
              revert("Swap failed to revert");
         } catch (bytes memory reason) {
              (int256 a0, int256 a1, uint160 endP) = parseRevertReason(reason);
-             return SwapSimulationResult(a0, a1, currentSqrtP, endP, reason); 
+             return SwapSimulationResult(a0, a1, currentSqrtP, endP, reason, false); // Unknown for low-level
         }
     }
 

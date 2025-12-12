@@ -100,6 +100,8 @@ We have created a ready-to-use JavaScript library to make getting quotes easy.
 
 ### **Features**
 *   Returns `expectedReceive`, `minReceive` (based on slippage), `executionPrice`, and `priceAfter` (New!).
+*   Returns `expectedReceive`, `minReceive` (based on slippage), `executionPrice`, and `priceAfter` (New!).
+*   **Min Receive Calculation:** `Expected Amount * (1 - slippagePercentage)` (**Off-Chain / JS**).
 *   Handles token decimals and BigInt math for you.
 *   Safe to use in Frontend or Scripts.
 
@@ -135,10 +137,15 @@ async function example() {
   "expectedReceive": "0.123456...",
   "minReceive": "0.119752...",
   "slippagePct": 0.03,
-  "currentPoolPrice": "1.25",
-  "priceAfter": "1.21", 
-  "executionPrice": "1.23",
-  "startSqrtPrice": "792281...",
+  "currentPoolPrice": "137.44",
+  "priceAfter": "138.96", 
+  "executionPrice": "138.21", 
+  "minReceive": "0.701...",
+  "isInverted": false,
+  "startSqrtPrice": "...",
   "raw": { ...BigInts... }
 }
 ```
+
+### Note on Inversion (`isInverted`)
+The library automatically detects if the pool is "inverted" (e.g. Asset/Currency vs Currency/Asset) and flips the price so it is always "Currency per Asset" (Human Readable). You don't need to do any math!
