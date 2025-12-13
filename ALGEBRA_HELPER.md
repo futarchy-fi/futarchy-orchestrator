@@ -4,8 +4,8 @@ This project includes a specialized helper contract to calculate precise precisi
 
 ## 🚀 Deployed Contract
 **Network:** Gnosis Chain  
-**Address:** `0xB261e5BEC88b8d235F27956aa497e57aa02142Ab`  
-**Verified:** [GnosisScan/Sourcify](https://gnosisscan.io/address/0xB261e5BEC88b8d235F27956aa497e57aa02142Ab)
+**Address:** `0xe32bfb3DD8bA4c7F82dADc4982c04Afa90027EFb`  
+**Verified:** [GnosisScan/Sourcify](https://gnosisscan.io/address/0xe32bfb3DD8bA4c7F82dADc4982c04Afa90027EFb)
 
 ---
 
@@ -60,7 +60,7 @@ Use `staticCall` to prevent gas spending.
 const helperAbi = [
   "function simulateQuote(address proposal, bool isYesPool, uint8 inputType, uint256 amountIn) external returns (tuple(int256 amount0Delta, int256 amount1Delta, uint160 startSqrtPrice, uint160 endSqrtPrice, bytes debugReason))"
 ];
-const helper = new ethers.Contract("0xB261e5BEC88b8d235F27956aa497e57aa02142Ab", helperAbi, provider);
+const helper = new ethers.Contract("0xe32bfb3DD8bA4c7F82dADc4982c04Afa90027EFb", helperAbi, provider);
 
 // Simulate selling 100 Outcome Tokens for Collateral in YES Pool
 // inputType 0 = Outcome Token
