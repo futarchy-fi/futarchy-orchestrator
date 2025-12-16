@@ -13,9 +13,20 @@ contract FutarchyAggregatorFactory {
         implementation = _implementation;
     }
 
-    function createAggregatorMetadata(string memory aggregatorName, string memory description) external returns (address) {
+    function createAggregatorMetadata(
+        string memory aggregatorName,
+        string memory description,
+        string memory metadata,
+        string memory metadataURI
+    ) external returns (address) {
         address clone = Clones.clone(implementation);
-        FutarchyAggregatorsMetadata(clone).initialize(msg.sender, aggregatorName, description);
+        FutarchyAggregatorsMetadata(clone).initialize(
+            msg.sender,
+            aggregatorName,
+            description,
+            metadata,
+            metadataURI
+        );
         emit AggregatorMetadataCreated(clone, aggregatorName);
         return clone;
     }

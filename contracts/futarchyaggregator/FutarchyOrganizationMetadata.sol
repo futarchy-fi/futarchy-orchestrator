@@ -8,25 +8,45 @@ import "./FutarchyProposalMetadata.sol";
 contract FutarchyOrganizationMetadata is Ownable, Initializable {
     string public companyName;
     string public description;
+    string public metadata;      // On-chain JSON for small data
+    string public metadataURI;   // IPFS/Arweave URI for large data
     FutarchyProposalMetadata[] public proposals;
 
     event CompanyInfoUpdated(string newName, string newDescription);
+    event ExtendedMetadataUpdated(string metadata, string metadataURI);
     event ProposalAdded(address indexed proposalMetadata);
 
     constructor() Ownable(msg.sender) {
         _disableInitializers();
     }
 
-    function initialize(address _owner, string memory _companyName, string memory _description) external initializer {
+    function initialize(
+        address _owner,
+        string memory _companyName,
+        string memory _description,
+        string memory _metadata,
+        string memory _metadataURI
+    ) external initializer {
         _transferOwnership(_owner);
         companyName = _companyName;
         description = _description;
+        metadata = _metadata;
+        metadataURI = _metadataURI;
     }
 
     function updateCompanyInfo(string memory _newName, string memory _newDescription) external onlyOwner {
         companyName = _newName;
         description = _newDescription;
         emit CompanyInfoUpdated(_newName, _newDescription);
+    }
+
+    function updateExtendedMetadata(
+        string memory _metadata,
+        string memory _metadataURI
+    ) external onlyOwner {
+        metadata = _metadata;
+        metadataURI = _metadataURI;
+        emit ExtendedMetadataUpdated(_metadata, _metadataURI);
     }
 
     function addProposal(address _proposalMetadata) external onlyOwner {

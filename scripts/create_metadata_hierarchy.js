@@ -13,10 +13,16 @@ const DATA = {
     QUESTION: "What will be the price of GNO",
     EVENT: "if its price is >= 130 sDAI?",
     DESCRIPTION: "Will GNO price be at or above 130 sDAI (Savings xDAI) at December 28, 2025 11:59 PM?",
+    PROPOSAL_METADATA: '{"category":"governance","tags":["gip","price-prediction"]}',
+    PROPOSAL_METADATA_URI: "",
     COMPANY_NAME: "GNOSIS DAO",
     COMPANY_DESC: "Gnosis DAO is the decentralized autonomous organization governing the Gnosis ecosystem.",
+    COMPANY_METADATA: '{"website":"https://gnosis.io","twitter":"@gaborGWL"}',
+    COMPANY_METADATA_URI: "",
     AGGREGATOR_NAME: "FutarchyFi",
-    AGGREGATOR_DESC: "The premier aggregation layer for Futarchy markets."
+    AGGREGATOR_DESC: "The premier aggregation layer for Futarchy markets.",
+    AGGREGATOR_METADATA: '{"version":"1.0"}',
+    AGGREGATOR_METADATA_URI: ""
 };
 
 async function main() {
@@ -34,6 +40,8 @@ async function main() {
         DATA.QUESTION,
         DATA.EVENT,
         DATA.DESCRIPTION,
+        DATA.PROPOSAL_METADATA,
+        DATA.PROPOSAL_METADATA_URI,
         gasConfig
     );
     console.log(`   Tx Sent: ${tx1.hash}`);
@@ -50,7 +58,13 @@ async function main() {
     console.log(`\n2️⃣  Creating Organization: ${DATA.COMPANY_NAME}...`);
     const OrgFactory = await ethers.getContractAt("OrganizationMetadataFactory", FACTORIES.ORGANIZATION);
 
-    const tx2 = await OrgFactory.createOrganizationMetadata(DATA.COMPANY_NAME, DATA.COMPANY_DESC, gasConfig);
+    const tx2 = await OrgFactory.createOrganizationMetadata(
+        DATA.COMPANY_NAME,
+        DATA.COMPANY_DESC,
+        DATA.COMPANY_METADATA,
+        DATA.COMPANY_METADATA_URI,
+        gasConfig
+    );
     console.log(`   Tx Sent: ${tx2.hash}`);
     const receipt2 = await tx2.wait();
 
@@ -72,7 +86,13 @@ async function main() {
     console.log(`\n4️⃣  Creating Aggregator: ${DATA.AGGREGATOR_NAME}...`);
     const AggFactory = await ethers.getContractAt("FutarchyAggregatorFactory", FACTORIES.AGGREGATOR);
 
-    const tx4 = await AggFactory.createAggregatorMetadata(DATA.AGGREGATOR_NAME, DATA.AGGREGATOR_DESC, gasConfig);
+    const tx4 = await AggFactory.createAggregatorMetadata(
+        DATA.AGGREGATOR_NAME,
+        DATA.AGGREGATOR_DESC,
+        DATA.AGGREGATOR_METADATA,
+        DATA.AGGREGATOR_METADATA_URI,
+        gasConfig
+    );
     console.log(`   Tx Sent: ${tx4.hash}`);
     const receipt4 = await tx4.wait();
 

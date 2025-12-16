@@ -13,9 +13,20 @@ contract OrganizationMetadataFactory {
         implementation = _implementation;
     }
 
-    function createOrganizationMetadata(string memory companyName, string memory description) external returns (address) {
+    function createOrganizationMetadata(
+        string memory companyName,
+        string memory description,
+        string memory metadata,
+        string memory metadataURI
+    ) external returns (address) {
         address clone = Clones.clone(implementation);
-        FutarchyOrganizationMetadata(clone).initialize(msg.sender, companyName, description);
+        FutarchyOrganizationMetadata(clone).initialize(
+            msg.sender,
+            companyName,
+            description,
+            metadata,
+            metadataURI
+        );
         emit OrganizationMetadataCreated(clone, companyName);
         return clone;
     }
