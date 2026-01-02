@@ -17,7 +17,9 @@ contract ProposalMetadataFactory {
         address proposalAddress,
         string memory displayNameQuestion,
         string memory displayNameEvent,
-        string memory description
+        string memory description,
+        string memory metadata,
+        string memory metadataURI
     ) external returns (address) {
         address clone = Clones.clone(implementation);
         FutarchyProposalMetadata(clone).initialize(
@@ -25,7 +27,9 @@ contract ProposalMetadataFactory {
             proposalAddress,
             displayNameQuestion,
             displayNameEvent,
-            description
+            description,
+            metadata,
+            metadataURI
         );
         emit ProposalMetadataCreated(clone, proposalAddress);
         return clone;

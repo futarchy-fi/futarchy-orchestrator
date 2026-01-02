@@ -8,25 +8,45 @@ import "./FutarchyOrganizationMetadata.sol";
 contract FutarchyAggregatorsMetadata is Ownable, Initializable {
     string public aggregatorName;
     string public description;
+    string public metadata;      // On-chain JSON for small data
+    string public metadataURI;   // IPFS/Arweave URI for large data
     FutarchyOrganizationMetadata[] public organizations;
 
     event AggregatorInfoUpdated(string newName, string newDescription);
+    event ExtendedMetadataUpdated(string metadata, string metadataURI);
     event OrganizationAdded(address indexed organizationMetadata);
 
     constructor() Ownable(msg.sender) {
         _disableInitializers();
     }
 
-    function initialize(address _owner, string memory _aggregatorName, string memory _description) external initializer {
+    function initialize(
+        address _owner,
+        string memory _aggregatorName,
+        string memory _description,
+        string memory _metadata,
+        string memory _metadataURI
+    ) external initializer {
         _transferOwnership(_owner);
         aggregatorName = _aggregatorName;
         description = _description;
+        metadata = _metadata;
+        metadataURI = _metadataURI;
     }
 
     function updateAggregatorInfo(string memory _newName, string memory _newDescription) external onlyOwner {
         aggregatorName = _newName;
         description = _newDescription;
         emit AggregatorInfoUpdated(_newName, _newDescription);
+    }
+
+    function updateExtendedMetadata(
+        string memory _metadata,
+        string memory _metadataURI
+    ) external onlyOwner {
+        metadata = _metadata;
+        metadataURI = _metadataURI;
+        emit ExtendedMetadataUpdated(_metadata, _metadataURI);
     }
 
     function addOrganization(address _organizationMetadata) external onlyOwner {

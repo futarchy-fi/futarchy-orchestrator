@@ -9,12 +9,16 @@ contract FutarchyProposalMetadata is Ownable, Initializable {
     string public displayNameQuestion;
     string public displayNameEvent;
     string public description;
+    string public metadata;      // On-chain JSON for small data
+    string public metadataURI;   // IPFS/Arweave URI for large data
 
     event MetadataUpdated(
         string displayNameQuestion,
         string displayNameEvent,
         string description
     );
+
+    event ExtendedMetadataUpdated(string metadata, string metadataURI);
 
     constructor() Ownable(msg.sender) {
         _disableInitializers();
@@ -25,13 +29,17 @@ contract FutarchyProposalMetadata is Ownable, Initializable {
         address _proposalAddress,
         string memory _displayNameQuestion,
         string memory _displayNameEvent,
-        string memory _description
+        string memory _description,
+        string memory _metadata,
+        string memory _metadataURI
     ) external initializer {
         _transferOwnership(_owner);
         proposalAddress = _proposalAddress;
         displayNameQuestion = _displayNameQuestion;
         displayNameEvent = _displayNameEvent;
         description = _description;
+        metadata = _metadata;
+        metadataURI = _metadataURI;
     }
 
     function updateMetadata(
@@ -43,5 +51,14 @@ contract FutarchyProposalMetadata is Ownable, Initializable {
         displayNameEvent = _displayNameEvent;
         description = _description;
         emit MetadataUpdated(_displayNameQuestion, _displayNameEvent, _description);
+    }
+
+    function updateExtendedMetadata(
+        string memory _metadata,
+        string memory _metadataURI
+    ) external onlyOwner {
+        metadata = _metadata;
+        metadataURI = _metadataURI;
+        emit ExtendedMetadataUpdated(_metadata, _metadataURI);
     }
 }
