@@ -26,9 +26,20 @@ These factories deploy minimal proxies (Clones) which are cheap and auto-verifie
 
 | Contract | Address |
 | :--- | :--- |
-| **Aggregator Factory** | [`0x511D18d5567d76bbd20dEaDF4F90CD9f039eEd2D`](https://gnosisscan.io/address/0x511D18d5567d76bbd20dEaDF4F90CD9f039eEd2D) |
-| **Organization Factory** | [`0xf4AeE123eEd6B86121F289EC81877150E0FD53Ae`](https://gnosisscan.io/address/0xf4AeE123eEd6B86121F289EC81877150E0FD53Ae) |
-| **Proposal Factory** | [`0xdc1248BD6ef64476166cD9823290dF597Ea4Ddb6`](https://gnosisscan.io/address/0xdc1248BD6ef64476166cD9823290dF597Ea4Ddb6) |
+| **Aggregator Factory** | [`0x8ffCf8546DE700FB2Ceab4709fB26ee05A19652B`](https://gnosisscan.io/address/0x8ffCf8546DE700FB2Ceab4709fB26ee05A19652B) |
+| **Organization Factory** | [`0x2Fa9318E1e29d7435EE9d23B687b10a9CDDD0d9e`](https://gnosisscan.io/address/0x2Fa9318E1e29d7435EE9d23B687b10a9CDDD0d9e) |
+| **Proposal Factory** | [`0x8E8DBe97B2B3B6fb77F30727F3dCcA085C9755D9`](https://gnosisscan.io/address/0x8E8DBe97B2B3B6fb77F30727F3dCcA085C9755D9) |
+
+---
+
+## 💾 Metadata & IPFS
+
+All metadata contracts (Aggregator, Organization, Proposal) support a **Dual-Field Pattern** for storing data:
+
+1.  **`metadata` (String)**: Stores small, critical JSON data directly on-chain (e.g., `{"category":"governance"}`).
+2.  **`metadataURI` (String)**: Stores a hash (IPFS) or URL pointing to larger datasets (e.g., `ipfs://Qm...`).
+
+This ensures core data is always available while allowing for rich, low-cost extended metadata.
 
 ---
 
