@@ -3,6 +3,7 @@ pragma solidity 0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./FutarchyProposalMetadata.sol";
 
 contract FutarchyOrganizationMetadata is Ownable, Initializable {
@@ -11,10 +12,23 @@ contract FutarchyOrganizationMetadata is Ownable, Initializable {
     string public metadata;      // On-chain JSON for small data
     string public metadataURI;   // IPFS/Arweave URI for large data
     FutarchyProposalMetadata[] public proposals;
+    
+    address public editor;                    // Optional editor with write access
+    address public proposalImplementation;   // Implementation for cloning proposals
 
     event CompanyInfoUpdated(string newName, string newDescription);
     event ExtendedMetadataUpdated(string metadata, string metadataURI);
     event ProposalAdded(address indexed proposalMetadata);
+    event ProposalRemoved(address indexed proposalMetadata);
+    event ProposalCreatedAndAdded(address indexed proposalMetadata, address indexed proposalAddress);
+    event EditorSet(address indexed newEditor);
+    event EditorRevoked(address indexed oldEditor);
+    event ProposalImplementationSet(address indexed implementation);
+
+    modifier onlyOwnerOrEditor() {
+        require(msg.sender == owner() || msg.sender == editor, "Not owner or editor");
+        _;
+    }
 
     constructor() Ownable(msg.sender) {
         _disableInitializers();
@@ -34,7 +48,23 @@ contract FutarchyOrganizationMetadata is Ownable, Initializable {
         metadataURI = _metadataURI;
     }
 
-    function updateCompanyInfo(string memory _newName, string memory _newDescription) external onlyOwner {
+    function setProposalImplementation(address _implementation) external onlyOwner {
+        proposalImplementation = _implementation;
+        emit ProposalImplementationSet(_implementation);
+    }
+
+    function setEditor(address _editor) external onlyOwner {
+        editor = _editor;
+        emit EditorSet(_editor);
+    }
+
+    function revokeEditor() external onlyOwner {
+        address oldEditor = editor;
+        editor = address(0);
+        emit EditorRevoked(oldEditor);
+    }
+
+    function updateCompanyInfo(string memory _newName, string memory _newDescription) external onlyOwnerOrEditor {
         companyName = _newName;
         description = _newDescription;
         emit CompanyInfoUpdated(_newName, _newDescription);
@@ -43,15 +73,57 @@ contract FutarchyOrganizationMetadata is Ownable, Initializable {
     function updateExtendedMetadata(
         string memory _metadata,
         string memory _metadataURI
-    ) external onlyOwner {
+    ) external onlyOwnerOrEditor {
         metadata = _metadata;
         metadataURI = _metadataURI;
         emit ExtendedMetadataUpdated(_metadata, _metadataURI);
     }
 
-    function addProposal(address _proposalMetadata) external onlyOwner {
+    function addProposalMetadata(address _proposalMetadata) external onlyOwnerOrEditor {
         proposals.push(FutarchyProposalMetadata(_proposalMetadata));
         emit ProposalAdded(_proposalMetadata);
+    }
+
+    /// @notice Create a new ProposalMetadata and add it to this Organization in one transaction
+    /// @dev Requires proposalImplementation to be set first via setProposalImplementation()
+    function createAndAddProposalMetadata(
+        address proposalAddress,
+        string memory displayNameQuestion,
+        string memory displayNameEvent,
+        string memory _description,
+        string memory _metadata,
+        string memory _metadataURI
+    ) external onlyOwnerOrEditor returns (address) {
+        require(proposalImplementation != address(0), "Proposal implementation not set");
+        
+        // Clone the proposal implementation
+        address clone = Clones.clone(proposalImplementation);
+        
+        // Initialize the clone with the organization as owner
+        FutarchyProposalMetadata(clone).initialize(
+            address(this),  // Organization owns the proposal
+            proposalAddress,
+            displayNameQuestion,
+            displayNameEvent,
+            _description,
+            _metadata,
+            _metadataURI
+        );
+        
+        // Add to proposals array
+        proposals.push(FutarchyProposalMetadata(clone));
+        
+        emit ProposalCreatedAndAdded(clone, proposalAddress);
+        return clone;
+    }
+
+    function removeProposalMetadata(uint256 index) external onlyOwnerOrEditor {
+        require(index < proposals.length, "Index out of bounds");
+        address removed = address(proposals[index]);
+        // Swap with last element and pop (gas efficient)
+        proposals[index] = proposals[proposals.length - 1];
+        proposals.pop();
+        emit ProposalRemoved(removed);
     }
 
     function getProposalsCount() external view returns (uint256) {
@@ -79,3 +151,4 @@ contract FutarchyOrganizationMetadata is Ownable, Initializable {
         return result;
     }
 }
+

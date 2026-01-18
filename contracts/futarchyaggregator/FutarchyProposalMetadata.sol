@@ -11,6 +11,8 @@ contract FutarchyProposalMetadata is Ownable, Initializable {
     string public description;
     string public metadata;      // On-chain JSON for small data
     string public metadataURI;   // IPFS/Arweave URI for large data
+    
+    address public editor;       // Optional editor with write access
 
     event MetadataUpdated(
         string displayNameQuestion,
@@ -19,6 +21,13 @@ contract FutarchyProposalMetadata is Ownable, Initializable {
     );
 
     event ExtendedMetadataUpdated(string metadata, string metadataURI);
+    event EditorSet(address indexed newEditor);
+    event EditorRevoked(address indexed oldEditor);
+
+    modifier onlyOwnerOrEditor() {
+        require(msg.sender == owner() || msg.sender == editor, "Not owner or editor");
+        _;
+    }
 
     constructor() Ownable(msg.sender) {
         _disableInitializers();
@@ -42,11 +51,22 @@ contract FutarchyProposalMetadata is Ownable, Initializable {
         metadataURI = _metadataURI;
     }
 
+    function setEditor(address _editor) external onlyOwner {
+        editor = _editor;
+        emit EditorSet(_editor);
+    }
+
+    function revokeEditor() external onlyOwner {
+        address oldEditor = editor;
+        editor = address(0);
+        emit EditorRevoked(oldEditor);
+    }
+
     function updateMetadata(
         string memory _displayNameQuestion,
         string memory _displayNameEvent,
         string memory _description
-    ) external onlyOwner {
+    ) external onlyOwnerOrEditor {
         displayNameQuestion = _displayNameQuestion;
         displayNameEvent = _displayNameEvent;
         description = _description;
@@ -56,7 +76,7 @@ contract FutarchyProposalMetadata is Ownable, Initializable {
     function updateExtendedMetadata(
         string memory _metadata,
         string memory _metadataURI
-    ) external onlyOwner {
+    ) external onlyOwnerOrEditor {
         metadata = _metadata;
         metadataURI = _metadataURI;
         emit ExtendedMetadataUpdated(_metadata, _metadataURI);
