@@ -39,13 +39,16 @@ contract FutarchyOrganizationMetadata is Ownable, Initializable {
         string memory _companyName,
         string memory _description,
         string memory _metadata,
-        string memory _metadataURI
+        string memory _metadataURI,
+        address _proposalImplementation
     ) external initializer {
         _transferOwnership(_owner);
         companyName = _companyName;
         description = _description;
         metadata = _metadata;
         metadataURI = _metadataURI;
+        proposalImplementation = _proposalImplementation;
+        emit ProposalImplementationSet(_proposalImplementation);
     }
 
     function setProposalImplementation(address _implementation) external onlyOwner {

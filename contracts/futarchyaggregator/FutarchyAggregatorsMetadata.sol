@@ -15,6 +15,7 @@ contract FutarchyAggregatorsMetadata is Ownable, Initializable {
     
     address public editor;                       // Optional editor with write access
     address public organizationImplementation;  // Implementation for cloning organizations
+    address public proposalImplementation;      // Implementation for cloning proposals (passed to Orgs)
 
     event AggregatorInfoUpdated(string newName, string newDescription);
     event ExtendedMetadataUpdated(string metadata, string metadataURI);
@@ -24,6 +25,7 @@ contract FutarchyAggregatorsMetadata is Ownable, Initializable {
     event EditorSet(address indexed newEditor);
     event EditorRevoked(address indexed oldEditor);
     event OrganizationImplementationSet(address indexed implementation);
+    event ProposalImplementationSet(address indexed implementation);
 
     modifier onlyOwnerOrEditor() {
         require(msg.sender == owner() || msg.sender == editor, "Not owner or editor");
@@ -39,18 +41,29 @@ contract FutarchyAggregatorsMetadata is Ownable, Initializable {
         string memory _aggregatorName,
         string memory _description,
         string memory _metadata,
-        string memory _metadataURI
+        string memory _metadataURI,
+        address _organizationImplementation,
+        address _proposalImplementation
     ) external initializer {
         _transferOwnership(_owner);
         aggregatorName = _aggregatorName;
         description = _description;
         metadata = _metadata;
         metadataURI = _metadataURI;
+        organizationImplementation = _organizationImplementation;
+        proposalImplementation = _proposalImplementation;
+        emit OrganizationImplementationSet(_organizationImplementation);
+        emit ProposalImplementationSet(_proposalImplementation);
     }
 
     function setOrganizationImplementation(address _implementation) external onlyOwner {
         organizationImplementation = _implementation;
         emit OrganizationImplementationSet(_implementation);
+    }
+
+    function setProposalImplementation(address _implementation) external onlyOwner {
+        proposalImplementation = _implementation;
+        emit ProposalImplementationSet(_implementation);
     }
 
     function setEditor(address _editor) external onlyOwner {
@@ -103,7 +116,8 @@ contract FutarchyAggregatorsMetadata is Ownable, Initializable {
             companyName,
             _description,
             _metadata,
-            _metadataURI
+            _metadataURI,
+            proposalImplementation
         );
         
         // Add to organizations array

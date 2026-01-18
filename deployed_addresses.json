@@ -1,0 +1,8 @@
+{
+  "proposalImplementation": "0x96d05F1Ac5c404ecE1706281541a96c3048e7493",
+  "organizationImplementation": "0x71740B6493650Dba8456d3B9aE11525859c554db",
+  "aggregatorImplementation": "0xBbeF479EC7B533349C75E3Ca88b69007b29A675f",
+  "proposalFactory": "0x19A4780243F0d72A8d6EF788652c19AC199B3BFd",
+  "organizationFactory": "0xD573Db1606b4D385E498dB65B584a4bdF2B61F86",
+  "aggregatorFactory": "0xB6DCc90C13414488557205Af65fe7bf59862a5D5"
+}

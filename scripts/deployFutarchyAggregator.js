@@ -38,13 +38,20 @@ async function main() {
     console.log(`   ✅ ProposalFactory: ${proposalFactoryAddr}`);
 
     const OrgFactory = await ethers.getContractFactory("OrganizationMetadataFactory");
-    const orgFactory = await OrgFactory.deploy(await orgImpl.getAddress(), gasConfig);
+    // Pass Organization Impl AND Proposal Impl
+    const orgFactory = await OrgFactory.deploy(await orgImpl.getAddress(), await proposalImpl.getAddress(), gasConfig);
     await orgFactory.waitForDeployment();
     const orgFactoryAddr = await orgFactory.getAddress();
     console.log(`   ✅ OrganizationFactory: ${orgFactoryAddr}`);
 
     const AggFactory = await ethers.getContractFactory("FutarchyAggregatorFactory");
-    const aggFactory = await AggFactory.deploy(await aggImpl.getAddress(), gasConfig);
+    // Pass Aggregator Impl AND Organization Impl AND Proposal Impl
+    const aggFactory = await AggFactory.deploy(
+        await aggImpl.getAddress(),
+        await orgImpl.getAddress(),
+        await proposalImpl.getAddress(),
+        gasConfig
+    );
     await aggFactory.waitForDeployment();
     const aggFactoryAddr = await aggFactory.getAddress();
     console.log(`   ✅ AggregatorFactory: ${aggFactoryAddr}`);
@@ -72,10 +79,27 @@ async function main() {
 
     // Verify Factories (With Impl arg)
     await verify(proposalFactoryAddr, "ProposalFactory", [await proposalImpl.getAddress()]);
-    await verify(orgFactoryAddr, "OrganizationFactory", [await orgImpl.getAddress()]);
-    await verify(aggFactoryAddr, "AggregatorFactory", [await aggImpl.getAddress()]);
+    await verify(orgFactoryAddr, "OrganizationFactory", [await orgImpl.getAddress(), await proposalImpl.getAddress()]);
+    await verify(aggFactoryAddr, "AggregatorFactory", [
+        await aggImpl.getAddress(),
+        await orgImpl.getAddress(),
+        await proposalImpl.getAddress()
+    ]);
 
     console.log("\n✅ Deployment Complete!");
+
+    const deployments = {
+        proposalImplementation: await proposalImpl.getAddress(),
+        organizationImplementation: await orgImpl.getAddress(),
+        aggregatorImplementation: await aggImpl.getAddress(),
+        proposalFactory: proposalFactoryAddr,
+        organizationFactory: orgFactoryAddr,
+        aggregatorFactory: aggFactoryAddr
+    };
+
+    const fs = require("fs");
+    fs.writeFileSync("deployed_addresses.json", JSON.stringify(deployments, null, 2));
+    console.log("📝 Saved addresses to deployed_addresses.json");
 }
 
 main().catch((error) => {

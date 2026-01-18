@@ -6,11 +6,13 @@ import "./FutarchyOrganizationMetadata.sol";
 
 contract OrganizationMetadataFactory {
     address public immutable implementation;
+    address public immutable proposalImplementation;
 
     event OrganizationMetadataCreated(address indexed metadata, string name);
 
-    constructor(address _implementation) {
+    constructor(address _implementation, address _proposalImplementation) {
         implementation = _implementation;
+        proposalImplementation = _proposalImplementation;
     }
 
     function createOrganizationMetadata(
@@ -25,7 +27,8 @@ contract OrganizationMetadataFactory {
             companyName,
             description,
             metadata,
-            metadataURI
+            metadataURI,
+            proposalImplementation
         );
         emit OrganizationMetadataCreated(clone, companyName);
         return clone;
