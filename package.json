@@ -7,7 +7,8 @@
         "test": "hardhat test",
         "deployFutarchy": "hardhat run scripts/deploy_orchestrator_and_run.js --network gnosis",
         "createFutarchy": "hardhat run scripts/run_pools_from_config.js --network gnosis",
-        "deployAggregator": "hardhat run scripts/deployFutarchyAggregator.js --network gnosis"
+        "deployAggregator": "hardhat run scripts/deployFutarchyAggregator.js --network gnosis",
+        "export-abis": "hardhat run scripts/export_abis.js"
     },
     "author": "",
     "license": "ISC",

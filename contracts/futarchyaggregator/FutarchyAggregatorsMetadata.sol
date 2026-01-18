@@ -110,9 +110,9 @@ contract FutarchyAggregatorsMetadata is Ownable, Initializable {
         // Clone the organization implementation
         address clone = Clones.clone(organizationImplementation);
         
-        // Initialize the clone with the aggregator as owner
+        // Initialize the clone with the msg.sender as owner
         FutarchyOrganizationMetadata(clone).initialize(
-            address(this),  // Aggregator owns the organization
+            msg.sender,  // User owns the organization
             companyName,
             _description,
             _metadata,

@@ -102,9 +102,9 @@ contract FutarchyOrganizationMetadata is Ownable, Initializable {
         // Clone the proposal implementation
         address clone = Clones.clone(proposalImplementation);
         
-        // Initialize the clone with the organization as owner
+        // Initialize the clone with the msg.sender as owner
         FutarchyProposalMetadata(clone).initialize(
-            address(this),  // Organization owns the proposal
+            msg.sender,  // User owns the proposal
             proposalAddress,
             displayNameQuestion,
             displayNameEvent,
